@@ -61,8 +61,6 @@ unsigned int vPWMl;
 unsigned int vPWMh;
 unsigned int HIGHpulse;
 unsigned int HIGHpulse1;
-unsigned int tmr1high;
-unsigned int tmr1low;
 //******************************************************************************
 // Función para interrupciones
 //******************************************************************************
@@ -86,8 +84,8 @@ void __interrupt() isr (void){
         // Revisa si hay interrupción de TMR0
         if (PORTCbits.RC0){
             // Si el bit está encendido lo apaga y carga el valor al TMR1
-            TMR1H = tmr1high;
-            TMR1L = tmr1low;
+            TMR1H = ((61314+(65535-HIGHpulse1)) & 0xFF00) >> 8;
+            TMR1L = (61314+(65535-HIGHpulse1)) & 0x00FF;
             PORTCbits.RC0 = 0;
         }
         else {
@@ -113,7 +111,7 @@ void main(void) {
     setupTMR0();
     setupTMR1();
     HIGHpulse = 241;
-    HIGHpulse = 241;
+    HIGHpulse1 = 65411;
     while(1){
         modomanual();        
         __delay_ms(1);
@@ -224,8 +222,7 @@ void PWMtmr0(void){
 void PWMtmr1(void){
     valADC = ((ADRESH << 2) + (ADRESL >> 6));
     HIGHpulse1 = (0.37*valADC + 65036); // mapea el valor a 0xFF0C-FF06
-    tmr1high = ((61314+(65535-HIGHpulse1)) & 0xFF00) >> 8;
-    tmr1low = (61314+(65535-HIGHpulse1)) & 0x00FF;
+    PORTD = valADC;
 }
 //******************************************************************************
 // Función para el mapeo de variables para el módulo PWM
