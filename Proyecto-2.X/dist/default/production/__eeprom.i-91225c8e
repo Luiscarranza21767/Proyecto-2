@@ -1,4 +1,4 @@
-# 1 "main.c"
+# 1 "C:\\Program Files\\Microchip\\xc8\\v2.40\\pic\\sources\\c90\\pic\\__eeprom.c"
 # 1 "<built-in>" 1
 # 1 "<built-in>" 3
 # 288 "<built-in>" 3
@@ -6,37 +6,7 @@
 # 1 "<built-in>" 2
 # 1 "C:/Program Files/Microchip/MPLABX/v6.00/packs/Microchip/PIC16Fxxx_DFP/1.3.42/xc8\\pic\\include\\language_support.h" 1 3
 # 2 "<built-in>" 2
-# 1 "main.c" 2
-# 11 "main.c"
-#pragma config FOSC = INTRC_NOCLKOUT
-
-#pragma config WDTE = OFF
-
-#pragma config PWRTE = OFF
-#pragma config MCLRE = OFF
-
-#pragma config CP = OFF
-
-#pragma config CPD = OFF
-
-#pragma config BOREN = OFF
-#pragma config IESO = OFF
-
-#pragma config FCMEN = OFF
-
-#pragma config LVP = OFF
-
-
-
-#pragma config BOR4V = BOR40V
-
-#pragma config WRT = OFF
-
-
-
-
-
-
+# 1 "C:\\Program Files\\Microchip\\xc8\\v2.40\\pic\\sources\\c90\\pic\\__eeprom.c" 2
 # 1 "C:/Program Files/Microchip/MPLABX/v6.00/packs/Microchip/PIC16Fxxx_DFP/1.3.42/xc8\\pic\\include\\xc.h" 1 3
 # 18 "C:/Program Files/Microchip/MPLABX/v6.00/packs/Microchip/PIC16Fxxx_DFP/1.3.42/xc8\\pic\\include\\xc.h" 3
 extern const char __xc8_OPTIM_SPEED;
@@ -2654,271 +2624,176 @@ extern __bank0 unsigned char __resetbits;
 extern __bank0 __bit __powerdown;
 extern __bank0 __bit __timeout;
 # 29 "C:/Program Files/Microchip/MPLABX/v6.00/packs/Microchip/PIC16Fxxx_DFP/1.3.42/xc8\\pic\\include\\xc.h" 2 3
-# 39 "main.c" 2
-
-# 1 "./oscilador.h" 1
-# 14 "./oscilador.h"
-# 1 "C:\\Program Files\\Microchip\\xc8\\v2.40\\pic\\include\\c90\\stdint.h" 1 3
-# 14 "./oscilador.h" 2
+# 1 "C:\\Program Files\\Microchip\\xc8\\v2.40\\pic\\sources\\c90\\pic\\__eeprom.c" 2
 
 
 
 
+void
+__eecpymem(volatile unsigned char *to, __eeprom unsigned char * from, unsigned char size)
+{
+ volatile unsigned char *cp = to;
 
+ while (EECON1bits.WR) continue;
+ EEADR = (unsigned char)from;
+ while(size--) {
+  while (EECON1bits.WR) continue;
 
-void setupINTOSC(uint8_t IRCF);
-# 40 "main.c" 2
+  EECON1 &= 0x7F;
 
-
-
-
-
-
-void setup(void);
-void setup_ADC(void);
-void setup_PWM1(void);
-void setup_PWM2(void);
-void setupTMR0(void);
-void setupTMR1(void);
-void mapeo(void);
-void modomanual(void);
-void PWMtmr0(void);
-void PWMtmr1(void);
-
-
-unsigned int valADC;
-unsigned int vPWM;
-unsigned int vPWMl;
-unsigned int vPWMh;
-unsigned int HIGHpulse;
-unsigned int HIGHpulse1;
-unsigned int tmr1high;
-unsigned int tmr1low;
-
-
-
-void __attribute__((picinterrupt(("")))) isr (void){
-    if (INTCONbits.T0IF){
-
-        if (PORTCbits.RC3){
-
-            TMR0 = 255-HIGHpulse;
-            PORTCbits.RC3 = 0;
-        }
-        else {
-
-            TMR0 = HIGHpulse;
-            PORTCbits.RC3 = 1;
-        }
-
-        INTCONbits.T0IF = 0;
-    }
-    if (PIR1bits.TMR1IF){
-
-        if (PORTCbits.RC0){
-
-            TMR1H = tmr1high;
-            TMR1L = tmr1low;
-            PORTCbits.RC0 = 0;
-        }
-        else {
-
-            TMR1H = (HIGHpulse1&0xFF00) >> 8;
-            TMR1L = HIGHpulse1&0x00FF;
-            PORTCbits.RC0 = 1;
-        }
-
-        PIR1bits.TMR1IF = 0;
-    }
+  EECON1bits.RD = 1;
+  *cp++ = EEDATA;
+  ++EEADR;
+ }
+# 36 "C:\\Program Files\\Microchip\\xc8\\v2.40\\pic\\sources\\c90\\pic\\__eeprom.c"
 }
 
+void
+__memcpyee(__eeprom unsigned char * to, const unsigned char *from, unsigned char size)
+{
+ const unsigned char *ptr =from;
 
+ while (EECON1bits.WR) continue;
+ EEADR = (unsigned char)to - 1U;
 
+ EECON1 &= 0x7F;
 
-void main(void) {
-    setup();
-    setupINTOSC(4);
-    setup_ADC();
-    setup_PWM1();
-    setup_PWM2();
-    setupTMR0();
-    setupTMR1();
-    HIGHpulse = 241;
-    HIGHpulse = 241;
-    while(1){
-        modomanual();
-        _delay((unsigned long)((1)*(1000000/4000.0)));
-    }
+ while(size--) {
+  while (EECON1bits.WR) {
+   continue;
+  }
+  EEDATA = *ptr++;
+  ++EEADR;
+  STATUSbits.CARRY = 0;
+  if (INTCONbits.GIE) {
+   STATUSbits.CARRY = 1;
+  }
+  INTCONbits.GIE = 0;
+  EECON1bits.WREN = 1;
+  EECON2 = 0x55;
+  EECON2 = 0xAA;
+  EECON1bits.WR = 1;
+  EECON1bits.WREN = 0;
+  if (STATUSbits.CARRY) {
+   INTCONbits.GIE = 1;
+  }
+ }
+# 101 "C:\\Program Files\\Microchip\\xc8\\v2.40\\pic\\sources\\c90\\pic\\__eeprom.c"
 }
 
-
-
-void setup(void){
-    ANSELH = 0;
-    TRISB = 0;
-    TRISC = 0;
-    TRISD = 0;
-    PORTC = 0;
-    PORTD = 0;
+unsigned char
+__eetoc(__eeprom void *addr)
+{
+ unsigned char data;
+ __eecpymem((unsigned char *) &data,addr,1);
+ return data;
 }
 
-
-
-void setup_ADC(void){
-    PORTAbits.RA0 = 0;
-    TRISAbits.TRISA0 = 1;
-    ANSELbits.ANS0 = 1;
-
-    PORTAbits.RA1 = 0;
-    TRISAbits.TRISA1 = 1;
-    ANSELbits.ANS1 = 1;
-
-    PORTAbits.RA2 = 0;
-    TRISAbits.TRISA2 = 1;
-    ANSELbits.ANS2 = 1;
-
-    PORTAbits.RA3 = 0;
-    TRISAbits.TRISA3 = 1;
-    ANSELbits.ANS3 = 1;
-
-    ADCON0bits.ADCS1 = 0;
-    ADCON0bits.ADCS0 = 1;
-
-    ADCON1bits.VCFG1 = 0;
-    ADCON1bits.VCFG0 = 0;
-
-    ADCON1bits.ADFM = 0;
-
-    ADCON0bits.ADON = 1;
-    _delay((unsigned long)((100)*(1000000/4000000.0)));
+unsigned int
+__eetoi(__eeprom void *addr)
+{
+ unsigned int data;
+ __eecpymem((unsigned char *) &data,addr,2);
+ return data;
 }
 
-
-
-void setup_PWM1(void){
-    TRISCbits.TRISC2 = 1;
-    PR2 = 254;
-    CCP1CON = 0b00001100;
-    TMR2IF = 0;
-    T2CONbits.T2CKPS = 0b11;
-    TMR2ON = 1;
-    while(!TMR2IF);
-    TRISCbits.TRISC2 = 0;
+#pragma warning push
+#pragma warning disable 2040
+__uint24
+__eetom(__eeprom void *addr)
+{
+ __uint24 data;
+ __eecpymem((unsigned char *) &data,addr,3);
+ return data;
 }
-void setup_PWM2(void){
-    TRISCbits.TRISC1 = 1;
-    PR2 = 254;
-    CCP2CON = 0b00001100;
-    TMR2IF = 0;
-    while(!TMR2IF);
-    TRISCbits.TRISC1 = 0;
+#pragma warning pop
+
+unsigned long
+__eetol(__eeprom void *addr)
+{
+ unsigned long data;
+ __eecpymem((unsigned char *) &data,addr,4);
+ return data;
 }
 
+#pragma warning push
+#pragma warning disable 1516
+unsigned long long
+__eetoo(__eeprom void *addr)
+{
+ unsigned long long data;
+ __eecpymem((unsigned char *) &data,addr,8);
+ return data;
+}
+#pragma warning pop
 
-
-void setupTMR0(void){
-    INTCONbits.GIE = 1;
-    INTCONbits.T0IE = 1;
-    INTCONbits.T0IF = 0;
-
-    OPTION_REGbits.T0CS = 0;
-    OPTION_REGbits.PSA = 0;
-    OPTION_REGbits.PS = 0b011;
-    TMR0 = 0;
+unsigned char
+__ctoee(__eeprom void *addr, unsigned char data)
+{
+ __memcpyee(addr,(unsigned char *) &data,1);
+ return data;
 }
 
-
-
-void setupTMR1(void){
-    T1CONbits.T1CKPS = 0;
-    T1CONbits.T1OSCEN = 0;
-    T1CONbits.TMR1CS = 0;
-    T1CONbits.TMR1ON = 1;
-
-    TMR1H = 0xEF;
-    TMR1L = 0x82;
-    INTCONbits.PEIE = 1;
-    PIE1bits.TMR1IE = 1;
-    PIR1bits.TMR1IF = 0;
-
+unsigned int
+__itoee(__eeprom void *addr, unsigned int data)
+{
+ __memcpyee(addr,(unsigned char *) &data,2);
+ return data;
 }
 
+#pragma warning push
+#pragma warning disable 2040
+__uint24
+__mtoee(__eeprom void *addr, __uint24 data)
+{
+ __memcpyee(addr,(unsigned char *) &data,3);
+ return data;
+}
+#pragma warning pop
 
-
-void PWMtmr0(void){
-    valADC = ((ADRESH << 2) + (ADRESL >> 6));
-    HIGHpulse = (0.017*valADC + 226);
+unsigned long
+__ltoee(__eeprom void *addr, unsigned long data)
+{
+ __memcpyee(addr,(unsigned char *) &data,4);
+ return data;
 }
 
+#pragma warning push
+#pragma warning disable 1516
+unsigned long long
+__otoee(__eeprom void *addr, unsigned long long data)
+{
+ __memcpyee(addr,(unsigned char *) &data,8);
+ return data;
+}
+#pragma warning pop
 
-
-void PWMtmr1(void){
-    valADC = ((ADRESH << 2) + (ADRESL >> 6));
-    HIGHpulse1 = (0.37*valADC + 65036);
-    tmr1high = ((61314+(65535-HIGHpulse1)) & 0xFF00) >> 8;
-    tmr1low = (61314+(65535-HIGHpulse1)) & 0x00FF;
+float
+__eetoft(__eeprom void *addr)
+{
+ float data;
+ __eecpymem((unsigned char *) &data,addr,3);
+ return data;
 }
 
-
-
-void mapeo(void){
-
-    valADC = ((ADRESH << 2) + (ADRESL >> 6));
-
-    vPWM = (0.061*valADC + 63);
-
-    vPWMl = vPWM & 0x003;
-
-    vPWMh = (vPWM & 0x3FC) >> 2;
+double
+__eetofl(__eeprom void *addr)
+{
+ double data;
+ __eecpymem((unsigned char *) &data,addr,4);
+ return data;
 }
 
+float
+__fttoee(__eeprom void *addr, float data)
+{
+ __memcpyee(addr,(unsigned char *) &data,3);
+ return data;
+}
 
-
-
-void modomanual(void){
-
-    ADCON0bits.CHS = 0b0000;
-    _delay((unsigned long)((100)*(1000000/4000000.0)));
-    ADCON0bits.GO = 1;
-    while (ADCON0bits.GO == 1);
-    ADIF = 0;
-
-    mapeo();
-
-    CCP1CONbits.DC1B = vPWMl;
-
-    CCPR1L = vPWMh;
-
-
-    ADCON0bits.CHS = 0b0001;
-    _delay((unsigned long)((100)*(1000000/4000000.0)));
-    ADCON0bits.GO = 1;
-    while (ADCON0bits.GO == 1);
-    ADIF = 0;
-
-    mapeo();
-
-    CCP2CONbits.DC2B0 = vPWMl & 0x01;
-    CCP2CONbits.DC2B1 = ((vPWMl & 0x02) >> 1);
-
-    CCPR2L = vPWMh;
-
-
-    ADCON0bits.CHS = 0b0010;
-    _delay((unsigned long)((100)*(1000000/4000000.0)));
-    ADCON0bits.GO = 1;
-    while (ADCON0bits.GO == 1);
-    ADIF = 0;
-    PWMtmr0();
-    _delay((unsigned long)((100)*(1000000/4000000.0)));
-
-
-    ADCON0bits.CHS = 0b0011;
-    _delay((unsigned long)((100)*(1000000/4000000.0)));
-    ADCON0bits.GO = 1;
-    while (ADCON0bits.GO == 1);
-    ADIF = 0;
-    PWMtmr1();
-    _delay((unsigned long)((100)*(1000000/4000000.0)));
-
+double
+__fltoee(__eeprom void *addr, double data)
+{
+ __memcpyee(addr,(unsigned char *) &data,4);
+ return data;
 }

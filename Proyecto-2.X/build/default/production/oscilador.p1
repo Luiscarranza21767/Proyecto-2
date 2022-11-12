@@ -278,9 +278,75 @@ Version 4.0 HI-TECH Software Intermediate Code
 }
 [e :U 140 ]
 "17
-[; ;oscilador.c: 17:     OSCCONbits.SCS = 1;
-[e = . . _OSCCONbits 0 0 -> -> 1 `i `uc ]
+[; ;oscilador.c: 17:     if (IRCF == 5){
+[e $ ! == -> _IRCF `i -> 5 `i 141  ]
+{
 "18
-[; ;oscilador.c: 18: }
+[; ;oscilador.c: 18:         OSCCONbits.IRCF = 0b101;
+[e = . . _OSCCONbits 0 4 -> -> 5 `i `uc ]
+"19
+[; ;oscilador.c: 19:     }
+}
+[e :U 141 ]
+"20
+[; ;oscilador.c: 20:     if (IRCF == 4){
+[e $ ! == -> _IRCF `i -> 4 `i 142  ]
+{
+"21
+[; ;oscilador.c: 21:         OSCCONbits.IRCF = 0b100;
+[e = . . _OSCCONbits 0 4 -> -> 4 `i `uc ]
+"22
+[; ;oscilador.c: 22:     }
+}
+[e :U 142 ]
+"23
+[; ;oscilador.c: 23:     if (IRCF == 3){
+[e $ ! == -> _IRCF `i -> 3 `i 143  ]
+{
+"24
+[; ;oscilador.c: 24:         OSCCONbits.IRCF = 0b011;
+[e = . . _OSCCONbits 0 4 -> -> 3 `i `uc ]
+"25
+[; ;oscilador.c: 25:     }
+}
+[e :U 143 ]
+"26
+[; ;oscilador.c: 26:     if (IRCF == 2){
+[e $ ! == -> _IRCF `i -> 2 `i 144  ]
+{
+"27
+[; ;oscilador.c: 27:         OSCCONbits.IRCF = 0b010;
+[e = . . _OSCCONbits 0 4 -> -> 2 `i `uc ]
+"28
+[; ;oscilador.c: 28:     }
+}
+[e :U 144 ]
+"29
+[; ;oscilador.c: 29:     if (IRCF == 1){
+[e $ ! == -> _IRCF `i -> 1 `i 145  ]
+{
+"30
+[; ;oscilador.c: 30:         OSCCONbits.IRCF = 0b001;
+[e = . . _OSCCONbits 0 4 -> -> 1 `i `uc ]
+"31
+[; ;oscilador.c: 31:     }
+}
+[e :U 145 ]
+"32
+[; ;oscilador.c: 32:     if (IRCF == 0){
+[e $ ! == -> _IRCF `i -> 0 `i 146  ]
+{
+"33
+[; ;oscilador.c: 33:         OSCCONbits.IRCF = 0b000;
+[e = . . _OSCCONbits 0 4 -> -> 0 `i `uc ]
+"34
+[; ;oscilador.c: 34:     }
+}
+[e :U 146 ]
+"36
+[; ;oscilador.c: 36:     OSCCONbits.SCS = 1;
+[e = . . _OSCCONbits 0 0 -> -> 1 `i `uc ]
+"37
+[; ;oscilador.c: 37: }
 [e :UE 138 ]
 }

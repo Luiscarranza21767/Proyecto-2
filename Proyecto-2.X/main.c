@@ -38,102 +38,256 @@
 
 #include <xc.h>
 #include "oscilador.h"
-#define _XTAL_FREQ 8000000
+#define _XTAL_FREQ 1000000
 
 //******************************************************************************
 // Definición de funciones y variables
 //******************************************************************************
 void setup(void);
-void initUART(void);        
-void cadena(char *puntero);
-void ComSerial(void);
-void setup_portb(void);
+void setup_ADC(void);
+void setup_PWM1(void);
+void setup_PWM2(void);
+void setupTMR0(void);
+void setupTMR1(void);
+void mapeo(void);
+void modomanual(void);
+void PWMtmr0(void);
+void PWMtmr1(void);
+
+// Variables para la configuración del PWM
+unsigned int valADC;
+unsigned int vPWM;
+unsigned int vPWMl;
+unsigned int vPWMh;
+unsigned int HIGHpulse;
+unsigned int HIGHpulse1;
+unsigned int tmr1high;
+unsigned int tmr1low;
 //******************************************************************************
-// Función de interrupciones
+// Función para interrupciones
 //******************************************************************************
 void __interrupt() isr (void){
-    if (RBIF == 1){             // Revisa si hay interrupción del puerto B
-    if (PORTBbits.RB7 == 0)     // Si hay revisa si se presionó RB6
-    {
-        __delay_ms(50);
-        if (PORTAbits.RA1 == 0){
-            PORTAbits.RA1 = 1;
+    if (INTCONbits.T0IF){
+        // Revisa si hay interrupción de TMR0
+        if (PORTCbits.RC3){
+            // Si el bit está encendido lo apaga y carga el valor al TMR0
+            TMR0 = 255-HIGHpulse;
+            PORTCbits.RC3 = 0;
         }
         else {
-            PORTAbits.RA1 = 0;
+            // Si el bit está apagado lo enciente y carga el valor al TMR0
+            TMR0 = HIGHpulse;
+            PORTCbits.RC3 = 1;
         }
+        // Apaga la bandera de interrupción del TMR0
+        INTCONbits.T0IF = 0;
     }
-    RBIF = 0;
+    if (PIR1bits.TMR1IF){
+        // Revisa si hay interrupción de TMR0
+        if (PORTCbits.RC0){
+            // Si el bit está encendido lo apaga y carga el valor al TMR1
+            TMR1H = tmr1high;
+            TMR1L = tmr1low;
+            PORTCbits.RC0 = 0;
+        }
+        else {
+            // Si el bit está apagado lo enciende y carga el valor al TMR1
+            TMR1H = (HIGHpulse1&0xFF00) >> 8;
+            TMR1L = HIGHpulse1&0x00FF;
+            PORTCbits.RC0 = 1;
+        }
+        // Apaga la bandera de interrupción del TMR1
+        PIR1bits.TMR1IF = 0; 
     }
 }
+
 //******************************************************************************
 // Función principal
 //******************************************************************************
 void main(void) {
-    setup();            // Realiza la configuración de puertos
-    setupINTOSC(7);     // Oscilador a 8 MHz
-    initUART();         // Configuración para el módulo UART
-    setup_portb();      // Configuración de interrupción del puerto B
-    
+    setup();
+    setupINTOSC(4);     // Oscilador a 1 MHz
+    setup_ADC();
+    setup_PWM1();
+    setup_PWM2();
+    setupTMR0();
+    setupTMR1();
+    HIGHpulse = 241;
+    HIGHpulse = 241;
     while(1){
-        if (PIR1bits.RCIF == 1){
-            ComSerial();
-        } // Cuando hay interrupción continua
-        __delay_ms(100); 
+        modomanual();        
+        __delay_ms(1);
     }
 }
 //******************************************************************************
 // Configuración de puertos
 //******************************************************************************
 void setup(void){
-    ANSEL = 0;
     ANSELH = 0;
-    
-    TRISA = 0;
-    PORTA = 0;
-    TRISB = 0b11000000;
-    PORTB = 0;
+    TRISB = 0;
+    TRISC = 0; 
     TRISD = 0;
-    PORTD = 0; 
+    PORTC = 0;
+    PORTD = 0;
 }
 //******************************************************************************
-// Configuración de módulo UART
+// Configuración del ADC
 //******************************************************************************
-void initUART(void){
-    // Configuración velocidad de baud rate
-    SPBRG = 12;
+void setup_ADC(void){
+    PORTAbits.RA0 = 0;      // Inicia el bit 0 de PORTA en 0
+    TRISAbits.TRISA0 = 1;   // RA0 es entrada
+    ANSELbits.ANS0 = 1;     // RA0 es analógico
     
-    TXSTAbits.SYNC = 0;     // Modo asíncrono
-    RCSTAbits.SPEN = 1;     // Habilitar módulo UART
+    PORTAbits.RA1 = 0;      // Configuración del canal analógico RA1
+    TRISAbits.TRISA1 = 1;
+    ANSELbits.ANS1 = 1;
     
-    TXSTAbits.TXEN = 1;     // Habilitar la transmisión
-    PIR1bits.TXIF = 0;
+    PORTAbits.RA2 = 0;      // Configuración del canal analógico RA2
+    TRISAbits.TRISA2 = 1;
+    ANSELbits.ANS2 = 1;
     
-    RCSTAbits.CREN = 1;     // Habilitar la recepción
+    PORTAbits.RA3 = 0;      // Configuración del canal analógico RA2
+    TRISAbits.TRISA3 = 1;
+    ANSELbits.ANS3 = 1;
+    
+    ADCON0bits.ADCS1 = 0;
+    ADCON0bits.ADCS0 = 1;   // Fosc/8
+    
+    ADCON1bits.VCFG1 = 0;   // Ref VSS
+    ADCON1bits.VCFG0 = 0;   // Ref VDD
+    
+    ADCON1bits.ADFM = 0;    // Justificado a la izquierda
+    
+    ADCON0bits.ADON = 1;    // Habilitar el convertidor ADC
+    __delay_us(100);
 }
 //******************************************************************************
-// Configuración del puerto B
+// Configuración del PWM
 //******************************************************************************
-void setup_portb(void){
-    INTCONbits.GIE = 1;     // Habilita interrupciones globales
-    INTCONbits.RBIE = 1;    // Habilita interrupción del puerto B
-    INTCONbits.RBIF = 0;    // Apaga la bandera de interrupción del puerto B
-    IOCB = 0b11000000;      // Habilita la interrupción en cambio
-    WPUB = 0b11000000;      // Habilita el Weak Pull-Up en el puerto B
-    OPTION_REGbits.nRBPU = 0;   // Deshabilita el bit de RBPU
+void setup_PWM1(void){
+    TRISCbits.TRISC2 = 1;       // CCP1
+    PR2 = 254;                  // Periodo de 16.32 ms
+    CCP1CON = 0b00001100;       // P1A como PWM
+    TMR2IF = 0;                 // bandera de TMR2 apagada
+    T2CONbits.T2CKPS = 0b11;    // Prescaler 1:16
+    TMR2ON = 1;                 // Habilitar TMR2
+    while(!TMR2IF);             //
+    TRISCbits.TRISC2 = 0;       // Habilitar la salida del PWM
+}
+void setup_PWM2(void){
+    TRISCbits.TRISC1 = 1;       // CCP0
+    PR2 = 254;                  // Periodo de 16.32 ms
+    CCP2CON = 0b00001100;       // P2A como PWM
+    TMR2IF = 0;                 // bandera de TMR2 apagada
+    while(!TMR2IF);
+    TRISCbits.TRISC1 = 0;       // Habilitar la salida del PWM
 }
 //******************************************************************************
-// Función para comunicación terminal - PIC
+// Configuración del TMR0
 //******************************************************************************
-void ComSerial(void){
-    if (RCREG == 0b00110001){  // Si es 1 en ASCII ejecuta
-        PORTAbits.RA0 = 1;
-        }
-    if (RCREG == 0b00110010){   // Si es 2 en ASCII ejecuta
-        PORTAbits.RA0 = 0;       
-    }
-    TXREG = RCREG;
-    PIR1bits.RCIF = 0;
+void setupTMR0(void){
+    INTCONbits.GIE = 1;         // Habilitar interrupciones globales
+    INTCONbits.T0IE = 1;        // Habilitar interrupción de TMR0
+    INTCONbits.T0IF = 0;        // Desactivar la bandera de TMR0
+    
+    OPTION_REGbits.T0CS = 0;    // Fosc/4
+    OPTION_REGbits.PSA = 0;     // Prescaler para TMR0
+    OPTION_REGbits.PS = 0b011;  // Prescaler 1:16
+    TMR0 = 0;                   // Valor inicial del TMR0
+}
+//******************************************************************************
+// Configuración del TMR1
+//******************************************************************************
+void setupTMR1(void){
+    T1CONbits.T1CKPS = 0;
+    T1CONbits.T1OSCEN = 0;
+    T1CONbits.TMR1CS = 0;    // Internal clock (FOSC/4)
+    T1CONbits.TMR1ON = 1;    // bit 0 enables timer
+    // Valor inicial del TMR1
+    TMR1H = 0xEF;         // preset for timer1 MSB register
+    TMR1L = 0x82;         // preset for timer1 LSB register
+    INTCONbits.PEIE = 1; // Habilitar interrupción de periféricos
+    PIE1bits.TMR1IE = 1; // Habilitar interrupción del timer 1
+    PIR1bits.TMR1IF = 0; // Apagar bandera de interrupción del timer 1
+    
+}
+//******************************************************************************
+// Función para PWM con TMR0
+//******************************************************************************
+void PWMtmr0(void){
+    valADC = ((ADRESH << 2) + (ADRESL >> 6));
+    HIGHpulse = (0.017*valADC + 226); // mapea el valor de 0-1023 a 224-241
+}
+//******************************************************************************
+// Función para PWM con TMR1
+//******************************************************************************
+void PWMtmr1(void){
+    valADC = ((ADRESH << 2) + (ADRESL >> 6));
+    HIGHpulse1 = (0.37*valADC + 65036); // mapea el valor a 0xFF0C-FF06
+    tmr1high = ((61314+(65535-HIGHpulse1)) & 0xFF00) >> 8;
+    tmr1low = (61314+(65535-HIGHpulse1)) & 0x00FF;
+}
+//******************************************************************************
+// Función para el mapeo de variables para el módulo PWM
+//******************************************************************************
+void mapeo(void){
+    // Carga el resultado a valADC en una variable de 1024 bits
+    valADC = ((ADRESH << 2) + (ADRESL >> 6));
+    // Mapea el resultado a los valores calculados para 1 y 2ms
+    vPWM = (0.061*valADC + 63);
+    // Obtiene los 2 bits bajos de la variable vPWM
+    vPWMl = vPWM & 0x003;
+    // Obtiene los 8 bits más altos de vPWM 
+    vPWMh = (vPWM & 0x3FC) >> 2;
 }
 
-
+//******************************************************************************
+// Función para el modo manual del proyecto
+//******************************************************************************
+void modomanual(void){
+    // Iniciar la conversión ADC
+    ADCON0bits.CHS = 0b0000;
+    __delay_us(100);
+    ADCON0bits.GO = 1;
+    while (ADCON0bits.GO == 1); // Revisa si ya terminó la conversión ADC
+    ADIF = 0;                   // Apaga la bandera del ADC
+    // Hará el mapeo del ADC a valores para el servo
+    mapeo();
+    // Carga los bits bajos a CCP1CON <5:4>
+    CCP1CONbits.DC1B = vPWMl;
+    // Carga los bits altos a CCPR1L
+    CCPR1L = vPWMh;
+    
+    // Cambia a canal analógico 1
+    ADCON0bits.CHS = 0b0001;
+    __delay_us(100);
+    ADCON0bits.GO = 1;
+    while (ADCON0bits.GO == 1); // Revisa si ya terminó la conversión ADC
+    ADIF = 0;               // Apaga la bandera del ADC
+    // Hará el mapeo del ADC a valores para el servo
+    mapeo();
+    // Carga los bits bajos a CCP2CON <5:4>
+    CCP2CONbits.DC2B0 = vPWMl & 0x01;
+    CCP2CONbits.DC2B1 = ((vPWMl & 0x02) >> 1);
+    // Carga los bits altos a CCPR2L
+    CCPR2L = vPWMh;
+    
+    // Cambia a canal analógico 2
+    ADCON0bits.CHS = 0b0010;
+    __delay_us(100);
+    ADCON0bits.GO = 1;
+    while (ADCON0bits.GO == 1); // Revisa si ya terminó la conversión ADC
+    ADIF = 0; 
+    PWMtmr0();
+    __delay_us(100);
+    
+     // Cambia a canal analógico 3
+    ADCON0bits.CHS = 0b0011;
+    __delay_us(100);
+    ADCON0bits.GO = 1;
+    while (ADCON0bits.GO == 1); // Revisa si ya terminó la conversión ADC
+    ADIF = 0; 
+    PWMtmr1();
+    __delay_us(100);
+        
+}

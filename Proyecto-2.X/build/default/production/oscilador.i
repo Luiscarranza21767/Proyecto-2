@@ -2654,5 +2654,24 @@ void setupINTOSC(uint8_t IRCF){
     if (IRCF == 6){
         OSCCONbits.IRCF = 0b110;
     }
+    if (IRCF == 5){
+        OSCCONbits.IRCF = 0b101;
+    }
+    if (IRCF == 4){
+        OSCCONbits.IRCF = 0b100;
+    }
+    if (IRCF == 3){
+        OSCCONbits.IRCF = 0b011;
+    }
+    if (IRCF == 2){
+        OSCCONbits.IRCF = 0b010;
+    }
+    if (IRCF == 1){
+        OSCCONbits.IRCF = 0b001;
+    }
+    if (IRCF == 0){
+        OSCCONbits.IRCF = 0b000;
+    }
+
     OSCCONbits.SCS = 1;
 }
