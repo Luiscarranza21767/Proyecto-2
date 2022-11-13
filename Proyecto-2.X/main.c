@@ -53,6 +53,7 @@ void mapeo(void);
 void modomanual(void);
 void PWMtmr0(void);
 void PWMtmr1(void);
+void setup_portb(void);
 
 // Variables para la configuración del PWM
 unsigned int valADC;
@@ -61,6 +62,7 @@ unsigned int vPWMl;
 unsigned int vPWMh;
 unsigned int HIGHpulse;
 unsigned int HIGHpulse1;
+int modo;
 //******************************************************************************
 // Función para interrupciones
 //******************************************************************************
@@ -97,6 +99,14 @@ void __interrupt() isr (void){
         // Apaga la bandera de interrupción del TMR1
         PIR1bits.TMR1IF = 0; 
     }
+    if (INTCONbits.RBIF){             // Revisa si hay interrupción del puerto B
+        if (PORTBbits.RB7 == 0)     // Si hay revisa si se presionó RB6
+        {
+            __delay_ms(50);
+            modo = modo + 1;
+        }
+        INTCONbits.RBIF = 0;  
+    }   
 }
 
 //******************************************************************************
@@ -110,6 +120,7 @@ void main(void) {
     setup_PWM2();
     setupTMR0();
     setupTMR1();
+    setup_portb();      // Configuración de interrupción del puerto B
     HIGHpulse = 241;
     HIGHpulse1 = 65411;
     while(1){
@@ -208,6 +219,16 @@ void setupTMR1(void){
     PIE1bits.TMR1IE = 1; // Habilitar interrupción del timer 1
     PIR1bits.TMR1IF = 0; // Apagar bandera de interrupción del timer 1
     
+}
+//******************************************************************************
+// Configuración de puerto B para interrupciones
+//******************************************************************************
+void setup_portb(void){
+    INTCONbits.RBIE = 1;    // Habilita interrupción del puerto B
+    INTCONbits.RBIF = 0;    // Apaga la bandera de interrupción del puerto B
+    IOCB = 0b11000000;      // Habilita la interrupción en cambio
+    WPUB = 0b11000000;      // Habilita el Weak Pull-Up en el puerto B
+    OPTION_REGbits.nRBPU = 0;   // Deshabilita el bit de RBPU
 }
 //******************************************************************************
 // Función para PWM con TMR0

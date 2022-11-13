@@ -2684,6 +2684,7 @@ void mapeo(void);
 void modomanual(void);
 void PWMtmr0(void);
 void PWMtmr1(void);
+void setup_portb(void);
 
 
 unsigned int valADC;
@@ -2692,6 +2693,7 @@ unsigned int vPWMl;
 unsigned int vPWMh;
 unsigned int HIGHpulse;
 unsigned int HIGHpulse1;
+int modo;
 
 
 
@@ -2728,6 +2730,14 @@ void __attribute__((picinterrupt(("")))) isr (void){
 
         PIR1bits.TMR1IF = 0;
     }
+    if (INTCONbits.RBIF){
+        if (PORTBbits.RB7 == 0)
+        {
+            _delay((unsigned long)((50)*(1000000/4000.0)));
+            modo = modo + 1;
+        }
+        INTCONbits.RBIF = 0;
+    }
 }
 
 
@@ -2741,6 +2751,7 @@ void main(void) {
     setup_PWM2();
     setupTMR0();
     setupTMR1();
+    setup_portb();
     HIGHpulse = 241;
     HIGHpulse1 = 65411;
     while(1){
@@ -2839,6 +2850,16 @@ void setupTMR1(void){
     PIE1bits.TMR1IE = 1;
     PIR1bits.TMR1IF = 0;
 
+}
+
+
+
+void setup_portb(void){
+    INTCONbits.RBIE = 1;
+    INTCONbits.RBIF = 0;
+    IOCB = 0b11000000;
+    WPUB = 0b11000000;
+    OPTION_REGbits.nRBPU = 0;
 }
 
 
